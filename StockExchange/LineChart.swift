@@ -23,6 +23,7 @@ public protocol LineChartDelegate {
 public class LineChart: UIView {
     
     let charcoalGrey =  UIColor(red: 0.216, green: 0.235, blue: 0.282, alpha: 0.5)
+    var check = ""
     
     private class Helpers {
         
@@ -447,10 +448,17 @@ public class LineChart: UIView {
         let (start, stop, step) = self.y.ticks
         for var i: CGFloat = start; i <= stop; i += step {
             yValue = self.bounds.height - self.y.scale(i) - (y.axis.inset * 1.5)
-            let label = UILabel(frame: CGRect(x: 0, y: yValue, width: y.axis.inset, height: y.axis.inset))
+            let label = UILabel(frame: CGRect(x: 0, y: yValue, width: y.axis.inset , height: y.axis.inset))
             label.font = UIFont.preferredFontForTextStyle(UIFontTextStyleCaption2)
+            //label.font = UIFont(name: "Helvetica", size: 8)
             label.textAlignment = .Center
-            label.text = String(Int(round(i)))
+            if check == ""{
+                check = String(Int(round(i)))
+            }else{
+                check = ""
+            }
+            label.text = check
+            
             label.textColor = UIColor.whiteColor()
             self.addSubview(label)
         }
