@@ -255,7 +255,68 @@ class GraphViewController: UIViewController,GraphDataDelegate {
             
         }else{
             //limit order
-            
+            if self.option == "buy"{
+                
+                var buyPrice : CGFloat = 0
+                if let n = NSNumberFormatter().numberFromString(txtPrice.text!) {
+                    let userPrice = CGFloat(n)
+                    
+                    if currentBestBuyPrice < userPrice{
+                        buyPrice = currentBestBuyPrice!
+                    }else{
+                        buyPrice = userPrice
+                    }
+                    
+                }
+                let userQuan = NSNumberFormatter().numberFromString(txtQuantity.text!)?.integerValue
+                var buyQuan = 0
+                var remainingQuan = 0
+                if userQuan <= quantForBestBuy!{
+                    buyQuan = userQuan!
+                }else{
+                    buyQuan = quantForBestBuy!
+                    remainingQuan = buyQuan - quantForBestBuy!
+                }
+                
+                let amount = buyPrice * CGFloat(buyQuan)
+                self.buySellView.removeFromSuperview()
+                let alert = UIAlertController(title: "Order Placed", message: "You have bought \(buyQuan) stocks for Rs\(String(format: "%.2f", amount)) at Rs\(String(format: "%.2f", buyPrice))", preferredStyle: UIAlertControllerStyle.Alert)
+                alert.addAction(UIAlertAction(title: "OK", style: UIAlertActionStyle.Default, handler: nil))
+                self.presentViewController(alert, animated: true, completion: nil)
+
+                
+            }else{
+                var sellPrice : CGFloat = 0
+                if let n = NSNumberFormatter().numberFromString(txtPrice.text!) {
+                    let userPrice = CGFloat(n)
+                    
+                    if currentBestSellPrice > userPrice{
+                        sellPrice = currentBestBuyPrice!
+                    }else{
+                        sellPrice = userPrice
+                    }
+                    
+                }
+                let userQuan = NSNumberFormatter().numberFromString(txtQuantity.text!)?.integerValue
+                var soldQuan = 0
+                var remainingQuan = 0
+                if userQuan <= quantForBestBuy!{
+                    soldQuan = userQuan!
+                }else{
+                    soldQuan = quantForBestBuy!
+                    remainingQuan = soldQuan - quantForBestBuy!
+                }
+                
+                let amount = sellPrice * CGFloat(soldQuan)
+                self.buySellView.removeFromSuperview()
+                let alert = UIAlertController(title: "Sold", message: "You have sold \(soldQuan) stocks for Rs\(String(format: "%.2f", amount)) at Rs\(String(format: "%.2f", sellPrice))", preferredStyle: UIAlertControllerStyle.Alert)
+                alert.addAction(UIAlertAction(title: "OK", style: UIAlertActionStyle.Default, handler: nil))
+                self.presentViewController(alert, animated: true, completion: nil)
+
+                
+                
+                
+            }
             
             
         }
