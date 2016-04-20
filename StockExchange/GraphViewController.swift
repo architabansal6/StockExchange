@@ -14,12 +14,21 @@ class GraphViewController: UIViewController,GraphDataDelegate {
     var timeStampArray = [String]()
     var lastTradedPriceArray = [CGFloat]()
     var bestBuyPriceArray = [CGFloat]()
-    var bestBuyQuantityArray = [CGFloat]()
+    var bestBuyQuantityArray = [String]()
     var bestSellPriceArray = [CGFloat]()
-    var bestSellQuantity = [CGFloat]()
+    var bestSellQuantity = [String]()
     var buyButton = UIButton()
     var sellButton = UIButton()
     var activityIndicator = UIActivityIndicatorView()
+    var buySellView = UIView()
+    var txtQuantity = UITextField()
+    var txtPrice = UITextField()
+    var option = ""
+    var currentTimeInterval : String?
+    var currentBestSellPrice : CGFloat?
+    var currentBestBuyPrice : CGFloat?
+    var quantForBestBuy : Int?
+    var quantForBestSell : Int?
     
     let url = "http://0.0.0.0:48129"
 
@@ -29,6 +38,7 @@ class GraphViewController: UIViewController,GraphDataDelegate {
         self.addButtons()
         self.view.backgroundColor = lineChart.charcoalGrey
         self.getGraphData()
+        
        
     }
     
@@ -59,7 +69,8 @@ class GraphViewController: UIViewController,GraphDataDelegate {
         self.buyButton.tag = 101
         self.buyButton.hidden = true
         self.buyButton.backgroundColor = UIColor(red: 0, green: 113/255, blue: 161/255, alpha: 0.7)
-        self.buyButton.addTarget(self, action: "buttonTapped:", forControlEvents: UIControlEvents.TouchDown)
+        self.buyButton.addTarget(self, action: "buttonTapped:", forControlEvents: UIControlEvents.AllEvents)
+        self.buyButton.titleLabel?.font = UIFont(name: "AppleSDGothicNeo-SemiBold", size: 18)!
         self.view.addSubview(self.buyButton)
         
         
@@ -68,7 +79,8 @@ class GraphViewController: UIViewController,GraphDataDelegate {
         self.sellButton.tag = 102
         self.sellButton.hidden = true
         self.sellButton.backgroundColor = UIColor(red: 0, green: 113/255, blue: 161/255, alpha: 0.7)
-        self.sellButton.addTarget(self, action: "buttonTapped:", forControlEvents: UIControlEvents.TouchDown)
+        self.sellButton.addTarget(self, action: "buttonTapped:", forControlEvents: UIControlEvents.AllEvents)
+        self.sellButton.titleLabel?.font = UIFont(name: "AppleSDGothicNeo-SemiBold", size: 18)!
         self.sellButton.translatesAutoresizingMaskIntoConstraints = false
         self.sellButton.alignmentRectInsets()
         self.view.addSubview(self.sellButton)
@@ -83,21 +95,177 @@ class GraphViewController: UIViewController,GraphDataDelegate {
         
         if sender.tag == 101{
             //buy
-            var buyAlert = UIAlertController(title: "Wait", message: "You can buy soon", preferredStyle: UIAlertControllerStyle.Alert)
-            buyAlert.addAction(UIAlertAction(title: "Dismiss", style: UIAlertActionStyle.Default,handler: nil))
-            
-            self.presentViewController(buyAlert, animated: true, completion: nil)
+            self.option = "buy"
+            self.createBuySellView()
+
         }else{
             //sell
-            var sellAlert = UIAlertController(title: "Wait", message: "You will sell soon", preferredStyle: UIAlertControllerStyle.Alert)
-            sellAlert.addAction(UIAlertAction(title: "Dismiss", style: UIAlertActionStyle.Default,handler: nil))
+            self.option = "sell"
+            self.createBuySellView()
             
-            self.presentViewController(sellAlert, animated: true, completion: nil)
 
-            
         }
         
     }
+    
+    override func touchesBegan(touches: Set<UITouch>, withEvent event: UIEvent?) {
+        self.buySellView.endEditing(true)
+        
+    }
+    
+    func createBuySellView(){
+        
+        for view in self.buySellView.subviews{
+            view.removeFromSuperview()
+        }
+        
+        
+        let height : CGFloat = 188
+        self.buySellView.frame = CGRect(x: 16.0, y: ((view.bounds.height/2) - (height/2)), width: view.bounds.width - 32.0, height: height)
+        self.buySellView.backgroundColor = UIColor(red: 127/255, green: 209/255, blue: 255/255, alpha: 0.9)
+        
+        UIApplication.sharedApplication().keyWindow!.addSubview(self.buySellView)
+       
+        var quantityLabel = UILabel(frame: CGRect(x: 16, y: 16, width: view.bounds.width/2 - 32 - 4, height: 44))
+        quantityLabel.text = "Quantity"
+        quantityLabel.textColor = UIColor(red: 0.969, green: 0.973, blue: 0.976, alpha: 1)
+        quantityLabel.font = UIFont(name: "AppleSDGothicNeo-Medium", size: 16)!
+        self.buySellView.addSubview(quantityLabel)
+        
+        self.txtQuantity = UITextField(frame: CGRect(x: buySellView.bounds.origin.x + buySellView.bounds.width - 16 - quantityLabel.frame.width , y: 16, width: quantityLabel.frame.width, height: 44))
+        
+        let borderQ = CALayer()
+        let widthQ = CGFloat(1.0)
+        borderQ.borderColor = UIColor(red: 0.969, green: 0.973, blue: 0.976, alpha: 1).CGColor
+        borderQ.frame = CGRect(x: 0, y: txtQuantity.frame.size.height - widthQ, width:  txtQuantity.frame.size.width, height: txtQuantity.frame.size.height)
+        
+        borderQ.borderWidth = widthQ
+        txtQuantity.layer.addSublayer(borderQ)
+        txtQuantity.layer.masksToBounds = true
+        txtQuantity.textColor = UIColor(red: 0.969, green: 0.973, blue: 0.976, alpha: 1)
+        txtQuantity.becomeFirstResponder()
+        self.buySellView.addSubview(txtQuantity)
+        
+        
+        var priceLabel = UILabel(frame: CGRect(x: 16, y: quantityLabel.frame.origin.y + 44 + 16, width: view.bounds.width/2 - 32 - 4, height: 44))
+        priceLabel.text = "Price(Optional)"
+        priceLabel.textColor = UIColor(red: 0.969, green: 0.973, blue: 0.976, alpha: 1)
+        priceLabel.font = UIFont(name: "AppleSDGothicNeo-Medium", size: 16)!
+        self.buySellView.addSubview(priceLabel)
+        
+        self.txtPrice = UITextField(frame: CGRect(x: buySellView.bounds.origin.x + buySellView.bounds.width - 16 - quantityLabel.frame.width , y: txtQuantity.frame.origin.y + 44 + 16, width: quantityLabel.frame.width, height: 44))
+        let borderP = CALayer()
+        let widthP = CGFloat(1.0)
+        borderP.borderColor = UIColor(red: 0.969, green: 0.973, blue: 0.976, alpha: 1).CGColor
+        borderP.frame = CGRect(x: 0, y: txtPrice.frame.size.height - widthP, width:  txtPrice.frame.size.width, height: txtPrice.frame.size.height)
+        
+        borderP.borderWidth = widthP
+        txtPrice.layer.addSublayer(borderP)
+        txtPrice.layer.masksToBounds = true
+        txtPrice.textColor = UIColor(red: 0.969, green: 0.973, blue: 0.976, alpha: 1)
+        self.buySellView.addSubview(txtPrice)
+        
+        var cancelButton = UIButton(frame: CGRect(x: 16, y: txtPrice.frame.origin.y + 44 + 8, width: 100, height: 44))
+       // cancelButton.backgroundColor = UIColor(red: 35/255, green: 140/255, blue: 100/255, alpha: 1.0)
+        cancelButton.setTitle("CANCEL", forState: UIControlState.Normal)
+        cancelButton.addTarget(self, action: "onCancel", forControlEvents: UIControlEvents.AllEvents)
+        cancelButton.setTitleColor(UIColor.whiteColor(), forState: UIControlState.Normal)
+        cancelButton.titleLabel?.font = UIFont(name: "AppleSDGothicNeo-SemiBold", size: 18)!
+        self.buySellView.addSubview(cancelButton)
+        
+        var saveButton = UIButton(frame: CGRect(x: buySellView.bounds.origin.x + buySellView.bounds.width - 100 - 16, y: txtPrice.frame.origin.y + 44 + 8, width: 100, height: 44))
+       // saveButton.backgroundColor = UIColor(red: 0, green: 113/255, blue: 161/255, alpha: 0.7)
+        saveButton.setTitle("SAVE", forState: UIControlState.Normal)
+        saveButton.setTitleColor(UIColor.whiteColor(), forState: UIControlState.Normal)
+        saveButton.addTarget(self, action: "onSave", forControlEvents: UIControlEvents.AllEvents)
+        saveButton.titleLabel?.font = UIFont(name: "AppleSDGothicNeo-SemiBold", size: 18)!
+        self.buySellView.addSubview(saveButton)
+
+        
+        
+        
+    }
+    
+    func onCancel(){
+        
+        self.buySellView.removeFromSuperview()
+        
+    }
+    
+    func onSave(){
+        
+        
+        self.currentTimeInterval = self.timeStampArray.last
+        let index = self.timeStampArray.count - 1
+        self.currentBestSellPrice = self.bestSellPriceArray[index]
+        self.currentBestBuyPrice = self.bestBuyPriceArray[index]
+        self.quantForBestSell = NSNumberFormatter().numberFromString(self.bestSellQuantity[index])?.integerValue
+        self.quantForBestBuy = NSNumberFormatter().numberFromString(self.bestBuyQuantityArray[index])?.integerValue
+        self.buySellStocks()
+        
+        
+        
+    }
+    
+    
+    
+    func buySellStocks(){
+        
+        if txtPrice.text == ""{
+            //market order
+            
+            if let quant = NSNumberFormatter().numberFromString(self.txtQuantity.text!)?.integerValue{
+                var amount : CGFloat = 0
+                var boughtQuantity : Int = 0
+                var price : CGFloat = 0
+                var titl : String = ""
+                var boughtOrSold = ""
+                
+                if self.option == "buy"{
+                    //buy market order
+                    price = currentBestBuyPrice!
+                    titl = "Order Placed"
+                    boughtOrSold = "bought"
+                }else{
+                    //sell market order
+                    price = currentBestSellPrice!
+                    titl = "Sold"
+                    boughtOrSold = "sold"
+                    
+                }
+
+                if quant < quantForBestBuy{
+                    
+                    amount = CGFloat(quant) * currentBestBuyPrice!
+                    boughtQuantity = quant
+                    
+                }else{
+                    
+                    amount = CGFloat(quantForBestBuy!) * currentBestBuyPrice!
+                    boughtQuantity = quantForBestBuy!
+                    
+                }
+                self.buySellView.removeFromSuperview()
+                let alert = UIAlertController(title: "\(titl)", message: "You have \(boughtOrSold) \(boughtQuantity) stocks for Rs\(String(format: "%.2f", amount)) at Rs\(String(format: "%.2f", price))", preferredStyle: UIAlertControllerStyle.Alert)
+                alert.addAction(UIAlertAction(title: "OK", style: UIAlertActionStyle.Default, handler: nil))
+                self.presentViewController(alert, animated: true, completion: nil)
+                
+                
+            }
+            
+        }else{
+            //limit order
+            
+            
+            
+        }
+        
+        
+        
+    }
+    
+    
+    
     
     func lightenUIColor(color: UIColor) -> UIColor {
         var h: CGFloat = 0
@@ -230,6 +398,26 @@ class GraphViewController: UIViewController,GraphDataDelegate {
                     let f = CGFloat(n)
                     self.lastTradedPriceArray.append(f)
                 }
+                if let n = NSNumberFormatter().numberFromString(dataArray[2]) {
+                    let f = CGFloat(n)
+                    self.bestBuyPriceArray.append(f)
+                }
+                if let n = NSNumberFormatter().numberFromString(dataArray[4]) {
+                    let f = CGFloat(n)
+                    self.bestSellPriceArray.append(f)
+                }
+                
+                self.bestBuyQuantityArray.append(dataArray[3])
+                self.bestSellQuantity.append(dataArray[5])
+                
+//                if let i = Int(dataArray[3]) {
+//                    self.bestBuyQuantityArray.append(i)
+//                }
+//                if let i = Int(dataArray[5]) {
+//                    self.bestSellQuantity.append(i)
+//                }
+                
+                
 
                 
             }
